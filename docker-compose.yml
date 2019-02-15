@@ -1,0 +1,57 @@
+version: "3"
+
+services:
+
+  # keycloak server which connect to a dockerized postgres and mailserver
+  keycloak:
+    image: jambit/keycloak
+    restart: always
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_PASSWORD: password
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - mailserver
+
+  # db for keycloak
+  # all data is stored in ./database folder. In case of trouble this folder can be deleted (as ultima ratio)
+  postgres:
+    image: postgres:10.5
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./database:/var/lib/postgresql/data
+
+  # smtp test server to collect all send emails
+  # see also https://github.com/mailhog/MailHog
+  mailserver:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+
+  # frontend
+  coffee-order-frontend:
+    image: jambit/coffee-order-frontend
+    ports:
+      - 8081:8081
+
+  # backend
+  coffee-order-service:
+    image: jambit/coffee-order-service-spring
+    ports:
+      - 8082:8082
+
+volumes:
+  postgres_data:
+    driver: local
